@@ -7,6 +7,7 @@ object Const {
     const val LAYOUT_INFLATER_PREFIX = "LayoutInflater.from"
     const val VIEW_INFLATER_PREFIX = "View.inflate"
     const val SET_CONTENT_VIEW_PREFIX = "setContentView"
+    const val RETURN_PREFIX = "return"
 
     const val ON_DESTROY_FUNC_DECLARATION = """
     override fun onDestroyView() {

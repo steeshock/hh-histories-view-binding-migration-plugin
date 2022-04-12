@@ -54,10 +54,10 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
         vararg properties: KtProperty,
     ) {
         if (body.allCompanionObjects.isNotEmpty()) {
-            val lastCompanionObject = body.allCompanionObjects.last()
+            val lastCompanionObject = body.allCompanionObjects.lastOrNull()
             val nextPsiElement = findNextNonWhitespaceElement(objectDeclaration = lastCompanionObject)
             properties.forEach {
-                lastCompanionObject.body?.addBefore(it, nextPsiElement)
+                lastCompanionObject?.body?.addBefore(it, nextPsiElement)
             }
         } else {
             properties.forEach {
@@ -99,16 +99,32 @@ abstract class ViewBindingPsiProcessor(protected val projectInfo: ProjectInfo) {
     }
 
     /**
-     * Returns proper binding name for setContentView() in Activities
+     * Returns main binding name from setContentView() in Activities
      * or returns default "binding" if no name was found or there is
      * only one import exists in file
      */
-    fun getContentViewBindingForActivity(layoutName: String): String {
+    fun getMainBindingForActivity(layoutName: String): String {
         return if (hasMultipleBindingsInFile) {
             syntheticImportDirectives.find { it.importPath?.pathStr?.contains(layoutName) == true }
                 ?.toFormattedDirective()
                 ?.toFormattedBindingName()
                 ?.decapitalize() ?: "binding"
+        } else {
+            "binding"
+        }
+    }
+
+    /**
+     * Returns main binding name from onCreateView() in Activities
+     * or returns default "binding" if no name was found or there is
+     * only one import exists in file
+     */
+    fun getMainBindingForFragment(layoutName: String): String {
+        return if (hasMultipleBindingsInFile) {
+            syntheticImportDirectives.find { it.importPath?.pathStr?.contains(layoutName) == true }
+                    ?.toFormattedDirective()
+                    ?.toFormattedBindingName()
+                    ?.decapitalize() ?: "binding"
         } else {
             "binding"
         }

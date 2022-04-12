@@ -2,6 +2,7 @@ package ru.hh.android.synthetic_plugin.extensions
 
 import android.databinding.tool.ext.toCamelCase
 import ru.hh.android.synthetic_plugin.utils.Const
+import ru.hh.android.synthetic_plugin.utils.Const.RETURN_PREFIX
 import ru.hh.android.synthetic_plugin.utils.Const.SET_CONTENT_VIEW_PREFIX
 
 fun String?.isKotlinSynthetic(): Boolean {
@@ -96,11 +97,22 @@ fun String.toActivityContentViewFormat(): String {
     return "$SET_CONTENT_VIEW_PREFIX(${this}.root)"
 }
 
+fun String.toFragmentOnCreateViewFormat(): String {
+    return "$RETURN_PREFIX ${this}.root"
+}
+
 /**
  * Returns in format "setContentView(R.layout.layout_name)" -> "layout_name"
  */
 fun String.getLayoutNameFromContentView(): String {
     return this.substringAfterLast('.').removeSuffix(")")
+}
+
+/**
+ * Returns in format "return ...R.layout.layout_name..." -> "layout_name"
+ */
+fun String.getLayoutNameFromReturnExpression(): String {
+    return this.substringAfterLast('.').substringBefore(",")
 }
 
 fun String.toFragmentInitializationFormat(

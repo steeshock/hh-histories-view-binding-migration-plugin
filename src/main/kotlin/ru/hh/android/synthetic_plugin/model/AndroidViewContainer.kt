@@ -49,9 +49,9 @@ sealed class AndroidViewContainer {
                 else -> ""
             }
         } else {
-            val newPrefix = viewBindingProperties.first {
+            val newPrefix = viewBindingProperties.firstOrNull {
                 it.importPath?.pathStr?.contains(idCamelCase) == true
-            }.getShortBindingName()
+            }?.getShortBindingName()
 
             when {
                 isNeedBindingPrefix -> "${newPrefix}Binding."

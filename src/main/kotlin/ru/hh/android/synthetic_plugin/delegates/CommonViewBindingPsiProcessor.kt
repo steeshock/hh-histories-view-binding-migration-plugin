@@ -1,8 +1,10 @@
 package ru.hh.android.synthetic_plugin.delegates
 
+import org.jetbrains.kotlin.nj2k.replace
 import org.jetbrains.kotlin.psi.KtClass
 import org.jetbrains.kotlin.psi.KtClassBody
 import org.jetbrains.kotlin.psi.KtClassInitializer
+import org.jetbrains.kotlin.psi.KtReturnExpression
 import org.jetbrains.kotlin.psi.getOrCreateBody
 import ru.hh.android.synthetic_plugin.extensions.*
 import ru.hh.android.synthetic_plugin.model.ProjectInfo
@@ -22,7 +24,7 @@ class CommonViewBindingPsiProcessor(
 
             tryToAddAfterCompanionObject(body, viewBindingDeclaration)
         }
-        replaceContentViewExpression(body)
+        replaceBindingInitializationInActivity(body)
     }
 
     override fun processFragment(ktClass: KtClass) {
@@ -38,6 +40,7 @@ class CommonViewBindingPsiProcessor(
             addBindingInitializationForFragment(body, bindingClassName)
             addBindingDisposingForFragment(body, bindingClassName)
         }
+        replaceBindingInitializationInFragment(body)
     }
 
     override fun processView(ktClass: KtClass) {
@@ -107,17 +110,31 @@ class CommonViewBindingPsiProcessor(
     }
 
     /**
-     * Replace existing setContentView() with proper binding in Activities
+     * Replace existing binding instantiation in setContentView() in Activities
      */
-    private fun replaceContentViewExpression(body: KtClassBody) {
+    private fun replaceBindingInitializationInActivity(body: KtClassBody) {
         body.functions.find { it.name == "onCreate" }?.let {
             it.bodyBlockExpression?.children?.find { element ->
                 element.text.contains(Const.SET_CONTENT_VIEW_PREFIX)
             }?.let { setContentViewFun ->
                 val layoutName = setContentViewFun.text.getLayoutNameFromContentView()
-                val contentViewTextFun = getContentViewBindingForActivity(layoutName).toActivityContentViewFormat()
+                val contentViewTextFun = getMainBindingForActivity(layoutName).toActivityContentViewFormat()
                 val contentViewBindingExpression = projectInfo.psiFactory.createExpression(contentViewTextFun)
                 setContentViewFun.replace(contentViewBindingExpression)
+            }
+        }
+    }
+
+    /**
+     * Replace existing binding instantiation in onCreateView in Fragments
+     */
+    private fun replaceBindingInitializationInFragment(body: KtClassBody) {
+        body.functions.find { it.name == "onCreateView" }?.let {
+            it.bodyBlockExpression?.children?.filterIsInstance<KtReturnExpression>()?.let { returnExpression ->
+                val layoutName = returnExpression.last().text.getLayoutNameFromReturnExpression()
+                val returnBindingName = getMainBindingForFragment(layoutName).toFragmentOnCreateViewFormat()
+                val returnBindingExpression = projectInfo.psiFactory.createExpression(returnBindingName)
+                returnExpression.last().replace(returnBindingExpression)
             }
         }
     }
